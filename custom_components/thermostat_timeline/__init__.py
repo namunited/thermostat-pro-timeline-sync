@@ -802,6 +802,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         hass.data[DOMAIN]["version"] = int(hass.data[DOMAIN]["version"]) + 1
         await _save_and_broadcast()
 
+    async def apply_now(call: ServiceCall):
+        mgr = hass.data[DOMAIN]["manager"]
+        await mgr._maybe_apply_now(force=True)
+
     hass.services.async_register(DOMAIN, "set_store", set_store)
     hass.services.async_register(DOMAIN, "clear_store", clear_store)
     hass.services.async_register(DOMAIN, "backup_now", backup_now)
@@ -809,6 +813,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     hass.services.async_register(DOMAIN, "restore_now", restore_now)
     hass.services.async_register(DOMAIN, "patch_entity", patch_entity)
     hass.services.async_register(DOMAIN, "clear", clear)
+    hass.services.async_register(DOMAIN, "apply_now", apply_now)
     # no apply_now service (removed)
 
     # Expose lightweight HTTP views for clients (works over HA Cloud)
