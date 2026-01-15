@@ -142,4 +142,6 @@ restore_now:
       required: false
       selector:
         boolean: {}
-
+apply_now:
+  name: Apply schedule now
+  description: Manually apply current scheduled target temperatures.
