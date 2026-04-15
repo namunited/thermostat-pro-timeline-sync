@@ -806,6 +806,49 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         mgr = hass.data[DOMAIN]["manager"]
         await mgr._maybe_apply_now(force=True)
 
+    async def activate_profile(call: ServiceCall):
+        profile = str(call.data.get("profile", "")).strip()
+        if not profile:
+            _LOGGER.warning("%s.activate_profile: profile is required", DOMAIN)
+            return
+        prof_schedules = hass.data[DOMAIN].get("profile_schedules", {}) or {}
+        schedules = hass.data[DOMAIN].get("schedules", {}) or {}
+        changed = False
+        for eid in set(list(prof_schedules.keys()) + list(schedules.keys())):
+            prof_data = dict(prof_schedules.get(eid, {}))
+            prof_data["activeProfile"] = profile
+            hass.data[DOMAIN].setdefault("profile_schedules", {})[eid] = prof_data
+            sched_row = dict(schedules.get(eid, {}))
+            sched_row["activeProfile"] = profile
+            hass.data[DOMAIN].setdefault("schedules", {})[eid] = sched_row
+            changed = True
+        if not changed:
+            return
+        hass.data[DOMAIN]["profile_version"] = int(hass.data[DOMAIN].get("profile_version", 1)) + 1
+        hass.data[DOMAIN]["version"] = int(hass.data[DOMAIN].get("version", 1)) + 1
+        await _save_and_broadcast()
+
+    async def deactivate_profile(call: ServiceCall):
+        prof_schedules = hass.data[DOMAIN].get("profile_schedules", {}) or {}
+        schedules = hass.data[DOMAIN].get("schedules", {}) or {}
+        changed = False
+        for eid in set(list(prof_schedules.keys()) + list(schedules.keys())):
+            prof_data = dict(prof_schedules.get(eid, {}))
+            if "activeProfile" in prof_data:
+                prof_data.pop("activeProfile")
+                hass.data[DOMAIN].setdefault("profile_schedules", {})[eid] = prof_data
+                changed = True
+            sched_row = dict(schedules.get(eid, {}))
+            if "activeProfile" in sched_row:
+                sched_row.pop("activeProfile")
+                hass.data[DOMAIN].setdefault("schedules", {})[eid] = sched_row
+                changed = True
+        if not changed:
+            return
+        hass.data[DOMAIN]["profile_version"] = int(hass.data[DOMAIN].get("profile_version", 1)) + 1
+        hass.data[DOMAIN]["version"] = int(hass.data[DOMAIN].get("version", 1)) + 1
+        await _save_and_broadcast()
+
     hass.services.async_register(DOMAIN, "set_store", set_store)
     hass.services.async_register(DOMAIN, "clear_store", clear_store)
     hass.services.async_register(DOMAIN, "backup_now", backup_now)
@@ -814,6 +857,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     hass.services.async_register(DOMAIN, "patch_entity", patch_entity)
     hass.services.async_register(DOMAIN, "clear", clear)
     hass.services.async_register(DOMAIN, "apply_now", apply_now)
+    hass.services.async_register(DOMAIN, "activate_profile", activate_profile)
+    hass.services.async_register(DOMAIN, "deactivate_profile", deactivate_profile)
     # no apply_now service (removed)
 
     # Expose lightweight HTTP views for clients (works over HA Cloud)

@@ -142,6 +142,23 @@ restore_now:
       required: false
       selector:
         boolean: {}
+
 apply_now:
   name: Apply schedule now
   description: Manually apply current scheduled target temperatures.
+
+activate_profile:
+  name: Activate profile
+  description: Activate a named profile
+  fields:
+    profile:
+      name: Profile
+      description: The name of the profile to activate.
+      required: true
+      example: night
+      selector:
+        text: {}
+
+deactivate_profile:
+  name: Deactivate profile
+  description: Deactivate the current profile, returning them to their default schedule.
