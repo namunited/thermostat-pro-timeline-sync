@@ -1283,8 +1283,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             )
 
     async def apply_now(call: ServiceCall):
-        mgr = hass.data[DOMAIN]["manager"]
-        await mgr._maybe_apply_now(force=True)
+        data = hass.data[DOMAIN]
+        multi = data["manager"]
+        await multi._sync()
+        mgr = multi.get(data.get("active_instance_id") or "default")
+        if mgr is not None:
+            await mgr._maybe_apply_now(force=True)
 
     async def activate_profile(call: ServiceCall):
         profile = str(call.data.get("profile", "")).strip()
